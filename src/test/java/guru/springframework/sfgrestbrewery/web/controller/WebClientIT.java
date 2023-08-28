@@ -166,6 +166,31 @@ public class WebClientIT {
     }
 
     @Test
+    void getBeerByIdNotFound() throws InterruptedException {
+        CountDownLatch countDownLatch = new CountDownLatch(2);
+
+        webClient.get().uri("api/v1/beer/18755")
+                .accept(MediaType.APPLICATION_JSON)
+                .retrieve().toBodilessEntity()
+                .subscribe(responseEntity -> {
+
+                }, throwable -> {
+                    if (throwable.getClass().getName().equals("org.springframework.web.reactive.function.client.WebClientResponseException$NotFound")) {
+                        WebClientResponseException ex = (WebClientResponseException) throwable;
+
+                        if (ex.getStatusCode().equals(HttpStatus.NOT_FOUND)) {
+                            countDownLatch.countDown();
+                        }
+                    }
+                });
+
+        countDownLatch.countDown();
+        countDownLatch.await(1000, TimeUnit.MILLISECONDS);
+        assertThat(countDownLatch.getCount()).isEqualTo(0);
+    }
+
+
+    @Test
     void getBeerByUpc() throws InterruptedException {
         CountDownLatch countDownLatch = new CountDownLatch(1);
 
